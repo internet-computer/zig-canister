@@ -1,0 +1,10 @@
+{
+  "canisters": {
+    "hello_zig": {
+      "type": "custom",
+      "build": "",
+      "candid": "not.did",
+      "wasm": "main.wasm"
+    }
+  }
+}

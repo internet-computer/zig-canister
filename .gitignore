@@ -1,0 +1,5 @@
+.direnv/
+.dfx/
+*.wasm*
+*.wat
+*.o
