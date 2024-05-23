@@ -96,7 +96,7 @@ dfx deploy
 
 Now, let's call the canister:
 ```sh
-enzo@merlaux:~/code/zig-cdk$ dfx canister call hello hi --output raw  | xxd -r -p
+enzo@merlaux:~/code/zig-cdk$ dfx canister call hello_zig hi --output raw  | xxd -r -p
 WARN: Cannot fetch Candid interface for hi, sending arguments with inferred types.
 Hello, World!
 ```
