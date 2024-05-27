@@ -31,11 +31,7 @@ And here is our zig code:
 extern "ic0" fn msg_reply_data_append(ptr: [*]const u8, len: usize) void;
 extern "ic0" fn msg_reply() void;
 
-comptime {
-    @export(go, .{ .name = "canister_query hi", .linkage = .strong });
-}
-
-fn go() callconv(.C) void {
+export fn @"canister_query hi"() callconv(.C) void {
     const msg = "Hello, World!\n";
     msg_reply_data_append(msg, msg.len);
     msg_reply();
@@ -57,27 +53,27 @@ wasm-strip main_c.wasm
 Let's compile the Zig code:
 ```sh
 # we compile zig
-zig build-exe src/main.zig -target wasm32-freestanding -fno-entry -fstrip --export="canister_query hi"
+zig build
 # translate to wat
-wasm2wat main.wasm > main.wat
+wasm2wat zig-out/bin/main.wasm > zig-out/bin/main.wat
 ```
 
 Now let's compare the two WASMs:
 ```sh
 enzo@merlaux:~/code/zig-cdk$ ll *.wasm
--rwxrwxr-x 1 enzo enzo 181 May 22 18:03 main.wasm*
+-rwxrwxr-x 1 enzo enzo 170 May 22 18:03 main.wasm*
 -rwxrwxr-x 1 enzo enzo 308 May 22 18:04 main_c.wasm*
 ```
 
-We have created a 181 bytes canister in Zig. Let us see if it works. First we need to create a minimal `dfx.json`:
+We have created a 170 bytes canister in Zig. Let us see if it works. First we need to create a minimal `dfx.json`:
 ```json
 {
   "canisters": {
     "hello_zig": {
       "type": "custom",
-      "build": "",
+      "build": "zig build",
       "candid": "not.did",
-      "wasm": "main.wasm"
+      "wasm": "zig-out/bin/main.wasm"
     }
   }
 }

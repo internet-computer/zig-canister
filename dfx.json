@@ -2,9 +2,9 @@
   "canisters": {
     "hello_zig": {
       "type": "custom",
-      "build": "",
+      "build": "zig build",
       "candid": "not.did",
-      "wasm": "main.wasm"
+      "wasm": "zig-out/bin/main.wasm"
     }
   }
 }
