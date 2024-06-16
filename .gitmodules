@@ -1,0 +1,3 @@
+[submodule "organic/qr-code/Qr-Code-generator"]
+	path = organic/qr-code/Qr-Code-generator
+	url = https://github.com/nayuki/QR-Code-generator
