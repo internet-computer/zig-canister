@@ -1,0 +1,10 @@
+{
+    "canisters": {
+        "qr_zig": {
+            "type": "custom",
+            "build": "zig build",
+            "candid": "not.did",
+            "wasm": "zig-out/bin/main.wasm"
+        }
+    }
+}
