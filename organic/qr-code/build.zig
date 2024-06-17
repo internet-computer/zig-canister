@@ -18,5 +18,7 @@ pub fn build(b: *std.Build) void {
         "canister_update go",
     };
 
+    // wasm.addObjectFile(source: LazyPath)
+
     b.installArtifact(wasm);
 }
