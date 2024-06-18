@@ -1,3 +1,5 @@
+const std = @import("std");
+const builtin = @import("builtin");
 const c = @cImport({
     @cInclude("qrcodegen.h");
 });
@@ -8,6 +10,7 @@ extern "ic0" fn msg_arg_data_size() i32;
 extern "ic0" fn msg_arg_data_copy(dst: i32, offset: i32, size: i32) void;
 
 const max = 2048;
+const debug = if (builtin.mode == .Debug) true else false;
 
 pub fn printQr(qrcode: [*]u8) void {
     const size: c_int = c.qrcodegen_getSize(qrcode);
@@ -50,5 +53,10 @@ export fn @"canister_update go"() callconv(.C) void {
     buf[@intCast(n)] = 0;
 
     basic(&buf);
+
     msg_reply();
+}
+
+pub fn main() void {
+    @"canister_update go"();
 }
