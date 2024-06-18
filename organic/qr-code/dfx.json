@@ -1,6 +1,6 @@
 {
     "canisters": {
-        "qr_zig": {
+        "qr": {
             "type": "custom",
             "build": "zig build",
             "candid": "not.did",

@@ -15,17 +15,18 @@ pub fn printQr(qrcode: [*]u8) void {
     var y: c_int = undefined;
     var x: c_int = undefined;
 
+    const newline = "\n";
+
     while (y < size + border) {
         while (x < size + border) {
             const resp = if (c.qrcodegen_getModule(qrcode, x, y)) "##" else "  ";
             msg_reply_data_append(resp, resp.len);
-
             x += 1;
         }
-        msg_reply_data_append("\n", 1);
+        msg_reply_data_append(newline, newline.len);
         y += 1;
     }
-    msg_reply_data_append("\n", 1);
+    msg_reply_data_append(newline, newline.len);
 }
 
 pub fn basic(text: [*]u8) void {
