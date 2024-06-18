@@ -12,8 +12,8 @@ const max = 2048;
 pub fn printQr(qrcode: [*]u8) void {
     const size: c_int = c.qrcodegen_getSize(qrcode);
     const border: c_int = 4;
-    var y: c_int = undefined;
-    var x: c_int = undefined;
+    var y: c_int = -border;
+    var x: c_int = -border;
 
     const newline = "\n";
 
@@ -23,9 +23,11 @@ pub fn printQr(qrcode: [*]u8) void {
             msg_reply_data_append(resp, resp.len);
             x += 1;
         }
+
         msg_reply_data_append(newline, newline.len);
         y += 1;
     }
+
     msg_reply_data_append(newline, newline.len);
 }
 
