@@ -15,12 +15,11 @@ const debug = if (builtin.mode == .Debug) true else false;
 pub fn printQr(qrcode: [*]u8) void {
     const size: c_int = c.qrcodegen_getSize(qrcode);
     const border: c_int = 4;
-    var y: c_int = -border;
-    var x: c_int = -border;
-
     const newline = "\n";
 
+    var y: c_int = -border;
     while (y < size + border) {
+        var x: c_int = -border;
         while (x < size + border) {
             const resp = if (c.qrcodegen_getModule(qrcode, x, y)) "##" else "  ";
             msg_reply_data_append(resp, resp.len);
@@ -41,7 +40,7 @@ pub fn basic(text: [*]u8) void {
 
     const ok = c.qrcodegen_encodeText(text, @constCast(&tempBuffer), @constCast(&qrcode), errCorLvl, c.qrcodegen_VERSION_MIN, c.qrcodegen_VERSION_MAX, c.qrcodegen_Mask_AUTO, true);
 
-    if (ok) printQr(text);
+    if (ok) printQr(@constCast(&qrcode));
 }
 
 export fn @"canister_update go"() callconv(.C) void {
@@ -53,8 +52,9 @@ export fn @"canister_update go"() callconv(.C) void {
     buf[@intCast(n)] = 0;
 
     basic(&buf);
-
-    msg_reply();
+    if (!debug) {
+        msg_reply();
+    }
 }
 
 pub fn main() void {
