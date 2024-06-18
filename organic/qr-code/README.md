@@ -9,3 +9,10 @@
 ```bash
 zig cc -target=wasm32-wasi -O ReleaseSmall qrcodegen.c -o qrcodegen.wasm
 ```
+
+
+compile qrcodegen and link against libc
+```
+zig  cc -r -target wasm32-freestanding -fPIC -lc Qr-Code-generator/c/qrcodegen.c -Wl,--no-en
+try -o qrcodegen.o
+```
