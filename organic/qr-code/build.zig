@@ -2,22 +2,40 @@ const std = @import("std");
 
 pub fn build(b: *std.Build) void {
     // if it's a run we build and run in debug mode for native architecture
-
     // if it's a build, we build the wasm
-    var target = b.standardTargetOptions(.{
-        .default_target = .{
-            .cpu_arch = .wasm32,
-            .os_tag = .freestanding,
-        },
-    });
-    var optimize: std.builtin.OptimizeMode = .ReleaseSmall;
-    var strip = true;
 
-    // TODO hacky could not figure out how to get if we do `zig build` or `zig build run`, rather if we have `zig build run -- aoeu` this works
-    if (b.args) |_| {
-        target = b.host;
+    var target: std.Build.ResolvedTarget = undefined;
+    var optimize: std.builtin.OptimizeMode = undefined;
+    var strip: bool = undefined;
+
+    const debug = if (b.args) |_|
+        true
+    else
+        false;
+
+    // TODO hacky could not figure out how to get if we do `zig build` or `zig build run` , rather if we have `zig build run -- aoeu` this works
+    if (debug) {
+        // TODO compiling for aarch64 leads to an error I cannot troubleshoot
+        target = b.standardTargetOptions(
+            .{
+                .default_target = .{
+                    // .cpu_arch = .aarch64,
+                    .cpu_arch = .x86_64,
+                    .os_tag = .freestanding,
+                },
+            },
+        );
         optimize = .Debug;
         strip = false;
+    } else {
+        target = b.standardTargetOptions(.{
+            .default_target = .{
+                .cpu_arch = .wasm32,
+                .os_tag = .freestanding,
+            },
+        });
+        optimize = .ReleaseSmall;
+        strip = true;
     }
 
     const qr = b.addExecutable(.{
@@ -26,19 +44,21 @@ pub fn build(b: *std.Build) void {
         .target = target,
         .optimize = optimize,
         .strip = strip,
+        .pic = true,
     });
 
-    qr.entry = .disabled;
-    qr.root_module.export_symbol_names = &[_][]const u8{
-        "canister_update go",
-    };
+    // TODO hacky
+    if (!debug) {
+        qr.entry = .disabled;
+        qr.root_module.export_symbol_names = &[_][]const u8{
+            "canister_update go",
+        };
+    } else {
+        qr.entry = .enabled;
+    }
 
     qr.addIncludePath(.{ .path = "Qr-Code-generator/c/" });
     qr.addCSourceFile(.{ .file = .{ .path = "Qr-Code-generator/c/qrcodegen.c" }, .flags = &[_][]const u8{} });
     qr.addCSourceFile(.{ .file = .{ .path = "Qr-Code-generator/c/libc.c" }, .flags = &[_][]const u8{} });
     b.installArtifact(qr);
-
-    const run_cmd = b.addRunArtifact(qr);
-    const run_step = b.step("run", "Run the application");
-    run_step.dependOn(&run_cmd.step);
 }

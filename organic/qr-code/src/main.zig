@@ -4,13 +4,14 @@ const c = @cImport({
     @cInclude("qrcodegen.h");
 });
 
+const debug = if (builtin.mode == .Debug) true else false;
+
 extern "ic0" fn msg_reply_data_append(ptr: [*]const u8, len: usize) void;
 extern "ic0" fn msg_reply() void;
 extern "ic0" fn msg_arg_data_size() i32;
 extern "ic0" fn msg_arg_data_copy(dst: i32, offset: i32, size: i32) void;
 
 const max = 2048;
-const debug = if (builtin.mode == .Debug) true else false;
 
 pub fn printQr(qrcode: [*]u8) void {
     const size: c_int = c.qrcodegen_getSize(qrcode);
@@ -22,15 +23,23 @@ pub fn printQr(qrcode: [*]u8) void {
         var x: c_int = -border;
         while (x < size + border) {
             const resp = if (c.qrcodegen_getModule(qrcode, x, y)) "##" else "  ";
-            msg_reply_data_append(resp, resp.len);
+
+            if (!debug) {
+                msg_reply_data_append(resp, resp.len);
+            }
+
             x += 1;
         }
 
-        msg_reply_data_append(newline, newline.len);
+        if (!debug) {
+            msg_reply_data_append(newline, newline.len);
+        }
         y += 1;
     }
 
-    msg_reply_data_append(newline, newline.len);
+    if (!debug) {
+        msg_reply_data_append(newline, newline.len);
+    }
 }
 
 pub fn basic(text: [*]u8) void {
@@ -38,20 +47,25 @@ pub fn basic(text: [*]u8) void {
     const qrcode: [c.qrcodegen_BUFFER_LEN_MAX]u8 = undefined;
     const tempBuffer: [c.qrcodegen_BUFFER_LEN_MAX]u8 = undefined;
 
-    const ok = c.qrcodegen_encodeText(text, @constCast(&tempBuffer), @constCast(&qrcode), errCorLvl, c.qrcodegen_VERSION_MIN, c.qrcodegen_VERSION_MAX, c.qrcodegen_Mask_AUTO, true);
+    const ok = c.qrcodegen_encodeText(@constCast(text), @constCast(&tempBuffer), @constCast(&qrcode), errCorLvl, c.qrcodegen_VERSION_MIN, c.qrcodegen_VERSION_MAX, c.qrcodegen_Mask_AUTO, true);
 
     if (ok) printQr(@constCast(&qrcode));
 }
 
 export fn @"canister_update go"() callconv(.C) void {
-    var n: i32 = msg_arg_data_size();
+    var n: i32 = if (!debug) msg_arg_data_size() else 0;
     n = if (n > max) max else n;
 
-    var buf: [max + 1]u8 = undefined;
-    msg_arg_data_copy(@intCast(@intFromPtr(&buf)), 0, n);
+    var buf = std.mem.zeroes([max + 1]u8);
+
+    if (!debug) {
+        msg_arg_data_copy(@intCast(@intFromPtr(&buf)), 0, n);
+    }
+
     buf[@intCast(n)] = 0;
 
     basic(&buf);
+
     if (!debug) {
         msg_reply();
     }
