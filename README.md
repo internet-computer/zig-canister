@@ -8,6 +8,15 @@ Attempts and contempt at re-creating iconic c canister in zig
 
 ## Zig
 
+
+### Snippets
+```zig
+    inline for (std.meta.fields(@TypeOf(b.*))) |f| {
+        std.log.debug(f.name ++ " {any}", .{@as(f.type, @field(b, f.name))});
+    }
+```
+
+### Issues
 Interesting issues we stumbled on:
 -   https://github.com/ziglang/zig/issues/12726
 -   https://github.com/ziglang/zig/issues/17039
