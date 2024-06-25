@@ -1,17 +1,21 @@
 const std = @import("std");
 
 pub fn build(b: *std.Build) void {
-    // if it's a run we build and run in debug mode for native architecture
+    // if it's a run we build and run in debug mode for linux x86-64
     // if it's a build, we build the wasm
 
     var target: std.Build.ResolvedTarget = undefined;
     var optimize: std.builtin.OptimizeMode = undefined;
     var strip: bool = undefined;
+    var debug: bool = undefined;
 
-    const debug = if (b.args) |_|
-        true
-    else
-        false;
+    if (b.args) |_| {
+        std.debug.print("debug mode\n", .{});
+        debug = true;
+    } else {
+        std.debug.print("wasm mode\n", .{});
+        debug = false;
+    }
 
     // TODO hacky could not figure out how to get if we do `zig build` or `zig build run` , rather if we have `zig build run -- aoeu` this works
     if (debug) {
@@ -21,7 +25,7 @@ pub fn build(b: *std.Build) void {
                 .default_target = .{
                     // .cpu_arch = .aarch64,
                     .cpu_arch = .x86_64,
-                    .os_tag = .freestanding,
+                    .os_tag = .linux,
                 },
             },
         );
@@ -53,8 +57,6 @@ pub fn build(b: *std.Build) void {
         qr.root_module.export_symbol_names = &[_][]const u8{
             "canister_update go",
         };
-    } else {
-        qr.entry = .enabled;
     }
 
     qr.addIncludePath(.{ .path = "Qr-Code-generator/c/" });

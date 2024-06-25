@@ -6,10 +6,12 @@ const c = @cImport({
 
 const debug = if (builtin.mode == .Debug) true else false;
 
-extern "ic0" fn msg_reply_data_append(ptr: [*]const u8, len: usize) void;
-extern "ic0" fn msg_reply() void;
-extern "ic0" fn msg_arg_data_size() i32;
-extern "ic0" fn msg_arg_data_copy(dst: i32, offset: i32, size: i32) void;
+const ic0 = if (debug)
+{
+    @import("mock_ic0");
+} else {
+    @import("ic0");
+};
 
 const max = 2048;
 
@@ -19,27 +21,18 @@ pub fn printQr(qrcode: [*]u8) void {
     const newline = "\n";
 
     var y: c_int = -border;
-    while (y < size + border) {
+    while (y < size + border) : (y += 1) {
         var x: c_int = -border;
-        while (x < size + border) {
+        while (x < size + border) : (x += 1) {
             const resp = if (c.qrcodegen_getModule(qrcode, x, y)) "##" else "  ";
 
-            if (!debug) {
-                msg_reply_data_append(resp, resp.len);
-            }
-
-            x += 1;
+            ic0.msg_reply_data_append(resp, resp.len);
         }
 
-        if (!debug) {
-            msg_reply_data_append(newline, newline.len);
-        }
-        y += 1;
+        ic0.msg_reply_data_append(newline, newline.len);
     }
 
-    if (!debug) {
-        msg_reply_data_append(newline, newline.len);
-    }
+    ic0.msg_reply_data_append(newline, newline.len);
 }
 
 pub fn basic(text: [*]u8) void {
@@ -53,24 +46,28 @@ pub fn basic(text: [*]u8) void {
 }
 
 export fn @"canister_update go"() callconv(.C) void {
-    var n: i32 = if (!debug) msg_arg_data_size() else 0;
+    var n: i32 = ic0.msg_arg_data_size();
     n = if (n > max) max else n;
 
     var buf = std.mem.zeroes([max + 1]u8);
 
-    if (!debug) {
-        msg_arg_data_copy(@intCast(@intFromPtr(&buf)), 0, n);
-    }
+    ic0.msg_arg_data_copy(@intCast(@intFromPtr(&buf)), 0, n);
 
+    // n is i32 and buf is usize!
     buf[@intCast(n)] = 0;
 
     basic(&buf);
 
-    if (!debug) {
-        msg_reply();
-    }
+    ic0.msg_reply();
 }
 
 pub fn main() void {
+    var args = std.process.args();
+    var i: u8 = 0;
+
+    while (args.next()) |arg| : (i += 1) std.debug.print("arg #{}: {s}\n", .{ i, arg });
+
+    // set up msg_arg
+
     @"canister_update go"();
 }
