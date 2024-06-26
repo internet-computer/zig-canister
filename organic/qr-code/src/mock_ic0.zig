@@ -1,29 +1,49 @@
-// src/mock_ic0.zig
 const std = @import("std");
 
-var msg: [2 * 1024 * 1024]u8 = "This is a mock message data for testing purposes.";
+// Education - https://internetcomputer.org/docs/current/references/ic-interface-spec
 
-pub fn msg_reply_data_append(ptr: [*]const u8, len: usize) void {
-    // Mock behavior: Print the data to the console
-    const data = @ptrCast([*]const u8, ptr)[0..len];
-    std.debug.print("Mock msg_reply_data_append: {s}\n", .{data});
-}
+var reply_buffer: [2 * 1024 * 1024]u8 = undefined;
+var msg_reply_call_count: u32 = 0;
+var reply_len: usize = 0;
+var arg_buffer: [1024]u8 = undefined;
+var arg_len: usize = 0;
 
-// This function can be called at most once (a second call will trap), and must
-// be called exactly once to indicate success.
+// replies to the sender with data assembled by `msg_reply_data_append`
+// can only be called once
 pub fn msg_reply() void {
-    std.debug.print("msg_reply() -> \n", .{});
+    if (msg_reply_call_count > 0) {
+        @panic("Only allowed to call `msg_reply` once");
+    }
+
+    std.debug.print("Replying with {} bytes: \n{s}\n", .{ reply_len, reply_buffer[0..reply_len] });
+
+    // reset
+    reply_len = 0;
+    msg_reply_call_count += 1;
+    @memset(reply_buffer[0..], 0);
 }
 
 pub fn msg_arg_data_size() i32 {
-    // Mock behavior: Return the size of the mock message
-    return msg.len;
+    return @intCast(arg_len);
+}
+
+// Appends data it to the (initially empty) data reply
+pub fn msg_reply_data_append(ptr: [*]const u8, len: usize) void {
+    if (reply_len + len > reply_buffer.len) {
+        @panic("Reply buffer overflow");
+    }
+
+    // TODO check the total length of the message does not exceed the maxmimum response size
+
+    // maybe copy forwards
+    @memcpy(reply_buffer[reply_len..][0..len], ptr[0..len]);
+    reply_len += len;
 }
 
 pub fn msg_arg_data_copy(dst: i32, offset: i32, size: i32) void {
-    // Mock behavior: Copy data from the mock message to the destination
-    const buffer = @intToPtr([*]u8, dst);
-    for (var i: i32 = 0; i < size; i += 1) {
-        buffer[i] = msg[offset + i];
+    if (offset + size > arg_len) {
+        @panic("Argument buffer overflow");
     }
+    const dest_ptr: [*]u8 = @ptrFromInt(@as(usize, @intCast(dst)));
+    @memcpy(dest_ptr[0..@intCast(size)], arg_buffer[@intCast(offset)..][0..@intCast(size)]);
 }

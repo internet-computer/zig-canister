@@ -4,14 +4,10 @@ const c = @cImport({
     @cInclude("qrcodegen.h");
 });
 
-const debug = if (builtin.mode == .Debug) true else false;
-
-const ic0 = if (debug)
-{
-    @import("mock_ic0");
-} else {
-    @import("ic0");
-};
+const ic0 = if (builtin.mode == .Debug)
+    @import("mock_ic0.zig")
+else
+    @import("ic0.zig");
 
 const max = 2048;
 
