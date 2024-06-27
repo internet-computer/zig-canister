@@ -57,6 +57,7 @@
 
             # zig
             zig
+            zls
 
             # wasm
             wabt

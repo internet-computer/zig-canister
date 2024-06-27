@@ -1,116 +1,40 @@
-# A Zig Canister
+# Organic Zig
 
-Ben Lynn has a blog post series about "Organic Apps", he creates canisters with
-`clang`, and `lld` only.
+Attempts and contempt at re-creating iconic c canister in zig
 
-[Quint](https://github.com/q-uint) and [Enzo](https://github.com/EnzoPlayer0ne), over beers, thought it would be fun to create a canister in zig, so
-we looked at
-Ben's [Hello, Internet Computer](https://fxa77-fiaaa-aaaae-aaana-cai.raw.ic0.app/organic/hello.html)
-blog post and decided to port it to Zig the following day.
+## Organic IC
+-   [X] hello-ic
+-   [ ] qr-code
 
-Anyways, here is the C code from Ben:
-```c
-#define IMPORT(m,n) __attribute__((import_module(m))) __attribute__((import_name(n)));
-#define EXPORT(n) asm(n) __attribute__((visibility("default")))
+## Zig
 
-void reply_append(void*, unsigned) IMPORT("ic0", "msg_reply_data_append");
-void reply       (void)            IMPORT("ic0", "msg_reply");
-
-void go() EXPORT("canister_query hi");
-
-void go() {
-  char msg[] = "Hello, World!\n";
-  reply_append(msg, sizeof(msg) - 1);
-  reply();
-}
-
-```
-
-And here is our zig code:
+### Snippets
 ```zig
-extern "ic0" fn msg_reply_data_append(ptr: [*]const u8, len: usize) void;
-extern "ic0" fn msg_reply() void;
-
-export fn @"canister_query hi"() callconv(.C) void {
-    const msg = "Hello, World!\n";
-    msg_reply_data_append(msg, msg.len);
-    msg_reply();
-}
-```
-
-Let's compile the C code:
-```sh
-# we compile the object file
-clang --target=wasm32 -c -O3 src/main.c -o main_c.o
-# we link the object file
-wasm-ld --no-entry --export-dynamic --allow-undefined main_c.o -o main_c.wasm
-# translate to wat
-wasm2wat main_c.wasm > main_c.wat
-# we strip the wasm binary
-wasm-strip main_c.wasm
-```
-
-Let's compile the Zig code:
-```sh
-# we compile zig
-zig build
-# translate to wat
-wasm2wat zig-out/bin/main.wasm > zig-out/bin/main.wat
-```
-
-Now let's compare the two WASMs:
-```sh
-enzo@merlaux:~/code/zig-cdk$ ll *.wasm
--rwxrwxr-x 1 enzo enzo 170 May 22 18:03 main.wasm*
--rwxrwxr-x 1 enzo enzo 308 May 22 18:04 main_c.wasm*
-```
-
-We have created a 170 bytes canister in Zig. Let us see if it works. First we need to create a minimal `dfx.json`:
-```json
-{
-  "canisters": {
-    "hello_zig": {
-      "type": "custom",
-      "build": "zig build",
-      "candid": "not.did",
-      "wasm": "zig-out/bin/main.wasm"
+    inline for (std.meta.fields(@TypeOf(b.*))) |f| {
+        std.log.debug(f.name ++ " {any}", .{@as(f.type, @field(b, f.name))});
     }
-  }
-}
 ```
 
-Then let's create a minimal candid file `not.did`:
-```
-service: {}
-```
+### Issues
+Interesting issues we stumbled on:
+-   https://github.com/ziglang/zig/issues/12726
+-   https://github.com/ziglang/zig/issues/17039
 
-We check if it actually works, start-up `dfx`:
-```sh
-dfx start
-dfx deploy
-```
+### Learning
 
-Now, let's call the canister:
-```sh
-enzo@merlaux:~/code/zig-cdk$ dfx canister call hello_zig hi --output raw  | xxd -r -p
-WARN: Cannot fetch Candid interface for hi, sending arguments with inferred types.
-Hello, World!
-```
+-   [documentation](https://ziglang.org/documentation/master)
+-   [zig build system](https://ziglang.org/learn/build-system/)
+-   [std doc](https://ziglang.org/documentation/master/std/)
+-   [learn x in y](https://learnxinyminutes.com/docs/zig/)
 
-IT WORKS!
+-   [interesting build.zig](https://github.com/hardliner66/abps/blob/main/build.zig)
 
-## Dev
+The library sometime does not have the answer
 
-To replicate the code, install `nix` and `direnv`:
+-   [dude the builder](https://www.youtube.com/@dudethebuilder)
+-   [zig.guide](https://zig.guide/)
+-   [openmind learning zig](https://www.openmymind.net/learning_zig/)
 
-- Install nix with [Determinate Systems Nix Installer](https://github.com/DeterminateSystems/nix-installer)
 
-```sh
-curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install
-```
 
-- Install direnv - [installation page](https://direnv.net/docs/installation.html)
-
-- [hook direnv into your shell](https://direnv.net/docs/hook.html)
-
-Run `direnv allow`. You should be all set-up!
+-   [ic0 interface](https://internetcomputer.org/docs/current/references/ic-interface-spec#system-api)

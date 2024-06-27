@@ -1,7 +1,9 @@
 .direnv/
 .dfx/
-zig-cache/
+zig-cache
 zig-out/
 *.wasm*
 *.wat
 *.o
+*.zon
+*.out
